@@ -3,18 +3,19 @@ package com.example.a8560p.fitsealbum;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ClipData;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.media.MediaScannerConnection;
-import android.os.Build;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.media.ExifInterface;
 import android.graphics.Color;
@@ -25,9 +26,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.view.menu.MenuView;
 import android.support.v7.widget.Toolbar;
 
 import android.util.Log;
@@ -41,11 +44,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.app.WallpaperManager;
+import android.widget.ViewFlipper;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
@@ -62,6 +68,7 @@ public class FullImageActivity extends AppCompatActivity {
     static final int MIN_DISTANCE = 150;
     View decorView;
     MyPrefs myPrefs;
+
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -298,12 +305,19 @@ public class FullImageActivity extends AppCompatActivity {
         decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         if (id == R.id.action_favorite) {
+            MenuView.ItemView favorite_button;
+            favorite_button = (MenuView.ItemView) findViewById(R.id.action_favorite);
+
+            favorite_button.setIcon(ContextCompat.getDrawable(this, R.drawable.round_favorite_24_pressed));
+
             return true;
-        } else if (id == R.id.nav_share) {
-            startActivity(Intent.createChooser(emailIntent(), "Share image using..."));
-            return true;
-        } else if (id == R.id.action_slideshow) {
-            // perform SLIDESHOW operations...
+        }
+        else if (id == R.id.action_slideshow) {
+            Intent newIntentForSlideShowActivity = new Intent(FullImageActivity.this, SlideShowActivity.class);
+            newIntentForSlideShowActivity.putExtra("id", position); // Lấy position id và truyền cho SlideShowActivity
+
+            startActivity(newIntentForSlideShowActivity);
+
             return true;
         } else if (id == R.id.action_setBackground) {
             // perform SETBACKGROUND operations...
@@ -351,7 +365,6 @@ public class FullImageActivity extends AppCompatActivity {
                         Details;
 
                 // -----  Tạo dialog để xuất ra detail -----
-
                 TextView title = new TextView(getApplicationContext());
                 title.setPadding(46, 40, 0, 0);
                 title.setText("Details");
