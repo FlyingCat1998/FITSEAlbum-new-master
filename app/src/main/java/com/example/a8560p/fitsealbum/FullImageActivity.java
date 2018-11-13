@@ -3,11 +3,11 @@ package com.example.a8560p.fitsealbum;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.ClipData;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -16,6 +16,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.MediaScannerConnection;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.media.ExifInterface;
 import android.graphics.Color;
@@ -55,6 +56,7 @@ import java.util.ArrayList;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.google.gson.Gson;
 
 import static android.view.View.VISIBLE;
 
@@ -68,6 +70,7 @@ public class FullImageActivity extends AppCompatActivity {
     static final int MIN_DISTANCE = 150;
     View decorView;
     MyPrefs myPrefs;
+    static boolean favoritedImage = false;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -75,11 +78,12 @@ public class FullImageActivity extends AppCompatActivity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
 
+        setContentView(R.layout.activity_full_image);
+
         myPrefs = new MyPrefs(this); // Khởi tạo biến để kiểm tra có đang trong NightMode hay không
         //Màn hình fullscreen
         decorView = getWindow().getDecorView();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        setContentView(R.layout.activity_full_image);
 
         // setup ActionBar
         toolBar = (Toolbar) findViewById(R.id.nav_actionBar);
@@ -160,7 +164,7 @@ public class FullImageActivity extends AppCompatActivity {
                                 ContentResolver contentResolver = getContentResolver();
                                 Cursor c = contentResolver.query(queryUri, projection, selection, selectionArgs, null);
                                 if (c.moveToFirst()) {
-                                    // Tìm thấy ID. Xoá ảnh dựa nhờ content provider
+                                    // Tìm thấy ID. Xoá ảnh dựa nhờ ContentResolver
                                     long id = c.getLong(c.getColumnIndexOrThrow(MediaStore.Images.Media._ID));
                                     Uri deleteUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id);
 
@@ -172,6 +176,39 @@ public class FullImageActivity extends AppCompatActivity {
 
                                 Toast.makeText(FullImageActivity.this, "Item has been deleted", Toast.LENGTH_SHORT).show();
                                 dialog.dismiss();
+
+                                for (int i = position; i < PicturesActivity.images.size() - 1; i++)
+                                {
+                                    PicturesActivity.images.set(i, PicturesActivity.images.get(i + 1));
+                                }
+
+                                PicturesActivity.images.remove(PicturesActivity.images.size() - 1);
+
+                                // Nếu ảnh được yêu thích thì khi xoá ảnh phải xoá trong danh sách các ảnh được yêu thích luôn
+                                if (favoritedImage)
+                                {
+                                    FavoriteActivity.favoriteImages.remove(returnUri);
+                                }
+
+                                int currentNumberOfPictures = PicturesActivity.images.size();
+                                if (currentNumberOfPictures == 0) {
+                                    finish();
+                                } else if (position == currentNumberOfPictures){
+                                    finish();
+                                    Intent i = new Intent(getApplicationContext(), FullImageActivity.class);
+                                    i.putExtra("id", position - 1);
+                                    i.putExtra("path", PicturesActivity.images.get(position - 1));
+                                    i.putExtra("allPath", PicturesActivity.images);
+                                    startActivity(i);
+                                }
+                                else {
+                                    finish();
+                                    Intent i = new Intent(getApplicationContext(), FullImageActivity.class);
+                                    i.putExtra("id", position);
+                                    i.putExtra("path", PicturesActivity.images.get(position));
+                                    i.putExtra("allPath", PicturesActivity.images);
+                                    startActivity(i);
+                                }
                             }
                         });
                         builder.setButton(Dialog.BUTTON_NEGATIVE,"NO", new DialogInterface.OnClickListener() {
@@ -279,6 +316,24 @@ public class FullImageActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; add items to the action bar
         getMenuInflater().inflate(R.menu.image_main, menu);
+
+        favoritedImage = false;
+
+        Intent i = getIntent();
+        String abc = i.getExtras().getString("path"); // Lấy đường dẫn trong intent
+        // Nếu tồn tại đường dẫn của ảnh trong favoriteImages
+        if (null != FavoriteActivity.favoriteImages && !FavoriteActivity.favoriteImages.isEmpty()) {
+            // Nếu ảnh đang chiếu có trong số ảnh được yêu thích thì chuyển tim sang màu đỏ
+            if (FavoriteActivity.favoriteImages.contains(abc))
+            {
+                MenuItem menuItem = menu.findItem(R.id.action_favorite);
+
+                menuItem.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.round_favorite_24_clicked)); // đổi màu đỏ
+
+                favoritedImage = true; // Đánh dấu ảnh đang chiếu đã được yêu thích
+            }
+        }
+
         return true;
     }
 
@@ -305,10 +360,47 @@ public class FullImageActivity extends AppCompatActivity {
         decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         if (id == R.id.action_favorite) {
-            MenuView.ItemView favorite_button;
-            favorite_button = (MenuView.ItemView) findViewById(R.id.action_favorite);
+            // Nếu ảnh đang được yêu thích thì khi bấm lại nút Favorite, đổi tim thành màu
+            // trắng và lấy ảnh ra khỏi danh sách ảnh được yêu thích
+            if (favoritedImage)
+            {
+                MenuView.ItemView favorite_button;
+                favorite_button = (MenuView.ItemView) findViewById(R.id.action_favorite);
 
-            favorite_button.setIcon(ContextCompat.getDrawable(this, R.drawable.round_favorite_24_pressed));
+                favorite_button.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.round_favorite_24));
+                FavoriteActivity.favoriteImages.remove(PicturesActivity.images.get(position));
+
+                favoritedImage = false;
+            }
+            else // Nếu ảnh chưa được yêu thích thì khi bấm vào nút Favorite, đổi tim thành màu đỏ và thêm ảnh vào danh sách ảnh được yêu thích
+            {
+                MenuView.ItemView favorite_button;
+                favorite_button = (MenuView.ItemView) findViewById(R.id.action_favorite);
+
+                favorite_button.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.round_favorite_24_clicked));
+
+                if (null != FavoriteActivity.favoriteImages && !FavoriteActivity.favoriteImages.isEmpty()) {
+                    FavoriteActivity.favoriteImages.add(PicturesActivity.images.get(position));
+                }
+                else
+                {
+                    FavoriteActivity.favoriteImages = new ArrayList<>();
+                    FavoriteActivity.favoriteImages.add(PicturesActivity.images.get(position));
+                }
+
+                favoritedImage = true;
+            }
+
+            // Cập nhật lại ảnh để lưu vào SharedPreferences
+            // (Lưu vào SharedPreferences để có thể lấy được thông tin của những ảnh đã được yêu thích khi thoát ứng dụng và bật lại)
+            // Nguồn: https://stackoverflow.com/questions/14981233/android-arraylist-of-custom-objects-save-to-sharedpreferences-serializable/40237149#40237149
+            SharedPreferences sharedPreferences = PreferenceManager
+                    .getDefaultSharedPreferences(this.getApplicationContext());
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            Gson gson = new Gson();
+            String json = gson.toJson(FavoriteActivity.favoriteImages);
+            editor.putString("savedFavoriteImages", json);
+            editor.commit();
 
             return true;
         }
@@ -332,7 +424,6 @@ public class FullImageActivity extends AppCompatActivity {
             }
             return true;
         } else if (id == R.id.action_print) {
-            // perform PRINT operations...
             return true;
         } else if (id == R.id.action_details) {
             // perform INFORMATION operations...
