@@ -320,11 +320,11 @@ public class FullImageActivity extends AppCompatActivity {
         favoritedImage = false;
 
         Intent i = getIntent();
-        String abc = i.getExtras().getString("path"); // Lấy đường dẫn trong intent
+        String returnUri = i.getExtras().getString("path"); // Lấy đường dẫn trong intent
         // Nếu tồn tại đường dẫn của ảnh trong favoriteImages
         if (null != FavoriteActivity.favoriteImages && !FavoriteActivity.favoriteImages.isEmpty()) {
             // Nếu ảnh đang chiếu có trong số ảnh được yêu thích thì chuyển tim sang màu đỏ
-            if (FavoriteActivity.favoriteImages.contains(abc))
+            if (FavoriteActivity.favoriteImages.contains(returnUri))
             {
                 MenuItem menuItem = menu.findItem(R.id.action_favorite);
 

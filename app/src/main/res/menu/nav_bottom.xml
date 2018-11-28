@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/nav_edit"
+        android:icon="@drawable/round_edit_24"
+        android:title="Edit" />
+    <item
+        android:id="@+id/nav_crop"
+        android:icon="@drawable/round_crop_24"
+        android:title="Crop" />
+    <item
+        android:id="@+id/nav_share"
+        android:icon="@drawable/round_share_24"
+        android:title="Share" />
+    <item
+        android:id="@+id/nav_delete"
+        android:icon="@drawable/baseline_delete_24"
+        android:title="Delete" />
+</menu>

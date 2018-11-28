@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="csu.matos.FullImageActivity">
+
+    <item
+        android:id="@+id/action_favorite"
+        android:icon="@drawable/round_favorite_24"
+        android:orderInCategory="140"
+        app:showAsAction="always"
+        android:title="Favorite" />
+
+    <item
+        android:id="@+id/action_slideshow"
+        android:orderInCategory="180"
+        app:showAsAction="never"
+        android:title="Slideshow"/>
+
+    <item
+        android:id="@+id/action_setBackground"
+        android:orderInCategory="200"
+        app:showAsAction="never"
+        android:title="Set Background"/>
+
+    <item
+        android:id="@+id/action_print"
+        android:orderInCategory="200"
+        app:showAsAction="never"
+        android:title="Print"/>
+
+    <item
+        android:id="@+id/action_details"
+        android:orderInCategory="200"
+        app:showAsAction="never"
+        android:title="Details"/>
+
+    <item
+        android:id="@+id/action_delete"
+        android:orderInCategory="200"
+        app:showAsAction="never"
+        android:title="Delete"/>
+</menu>
